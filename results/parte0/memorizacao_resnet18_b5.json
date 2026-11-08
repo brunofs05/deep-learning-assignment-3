@@ -1,0 +1,8 @@
+{
+  "epoch_train_clean_acc_95": 11,
+  "epoch_train_clean_acc_100": 22,
+  "epoch_min_val_loss": 45,
+  "min_val_loss": 2.0541534423828125,
+  "epoch_best_val_f1": 40,
+  "best_epoch_selected": 40
+}

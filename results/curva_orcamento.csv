@@ -1,0 +1,7 @@
+metodo,orcamento,seed,f1_macro,acuracia
+piso_resnet18,1,0,0.2138,0.2293
+piso_resnet18,5,0,0.4237,0.4834
+piso_resnet18,5,1,0.4771,0.5203
+piso_resnet18,5,2,0.461,0.4994
+piso_resnet18,20,0,0.6017,0.6412
+piso_smallcnn,5,0,0.3074,0.328

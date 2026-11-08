@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- PA3 ---
+data/
+runs/
+weights/
+*.pt
+*.pth

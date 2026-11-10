@@ -2,7 +2,7 @@
 
 Classificação de 21 espécies (ENA24) com 5 rótulos por classe + ~6,5k imagens sem rótulo.
 Backbone: **ResNet-18 (ImageNet)**. Parte 1: **Trilha C (professor → aluno)**.
-Enunciado: [`docs/PA3.md`](docs/PA3.md).
+Enunciado: [`docs/PA3.md`](docs/PA3.md). Decisões e justificativas: [`docs/DECISOES.md`](docs/DECISOES.md).
 
 ## Ambiente
 

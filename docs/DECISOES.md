@@ -205,10 +205,34 @@ ao `evaluate.py`, colunas `image_id,label` com os nomes de `classes.csv`.
 
 ---
 
+## 6b. Trilha C — implementação do professor
+
+### 6b.1 Professor via open_clip, só inferência — 2026-11-10
+**Decisão:** `scripts/teacher.py` extrai embeddings e logits zero-shot (BioCLIP, SigLIP ou CLIP-L, pesos abertos do HF)
+para o `test_public` (só para medir o professor) e para o train sem rótulo. **O val nunca é lido.** Embeddings ficam em
+`runs/teacher/` (fora do git); logits, métricas e matriz de confusão em `results/teacher/<nome>/` (versionados).
+
+**Por quê:** o enunciado permite o foundation model só como professor, sem ver o val e fora do modelo entregue.
+Salvar os logits desacopla o professor do aluno: o aluno treina sem importar o CLIP.
+
+### 6b.2 Prompts: ensemble de 4 templates, quadro inteiro — 2026-11-10 (resolve item da seção 7)
+**Decisão:** média dos embeddings de texto de 4 templates (foto simples, câmera trap, infravermelho noturno, animal pequeno);
+imagem redimensionada inteira (sem center crop do preprocess do open_clip), pelo mesmo motivo da 4.1.
+**Ressalva:** os templates foram escolhidos a priori, sem ajuste em nenhum conjunto rotulado.
+
+### 6b.3 Compute: professor local (CPU), aluno no Kaggle — 2026-11-10 (ajusta a 2.1)
+**Decisão:** esta máquina não tem a 1080 Ti (só GPU integrada Intel); o treino do aluno e da Parte 2 roda no Kaggle,
+e o código novo chega lá por um branch do repo privado (o notebook clona o branch).
+
+**Por quê:** o professor é só inferência (~7,3k imagens, viável em CPU); o aluno em 384 px sobre 6,5k imagens e os
+5 treinos da Parte 2 pedem GPU.
+
+---
+
 ## 7. Em aberto (decidir na Trilha C)
 
 - **Qual professor:** BioCLIP vs. CLIP/SigLIP, decidido pelo F1 zero-shot medido (o test_public só serve para medir o professor).
-- **Prompts** do zero-shot (nome da classe puro vs. "a camera trap photo of a …").
+- ~~Prompts do zero-shot~~ → ensemble de 4 templates (ver 6b.2).
 - **Tratamento do ruído:** filtro por confiança, rótulos suaves com temperatura, ou professor ajustado com os 105 rótulos.
 - **Cache das imagens pré-redimensionadas** para treinar o aluno nas 6.505 imagens (hoje a GPU fica em ~30% por gargalo de leitura de JPEG).
 - **Sinal de out-of-distribution** para a pergunta da capivara (ex.: confiança máxima baixa, entropia, distância no espaço de features do professor).

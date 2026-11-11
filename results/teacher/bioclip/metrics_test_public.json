@@ -1,0 +1,8 @@
+{
+  "f1_macro": 0.30418266786148396,
+  "accuracy": 0.3563501849568434,
+  "n": 811,
+  "teacher": "bioclip",
+  "hf_id": "hf-hub:imageomics/bioclip",
+  "split": "test_public"
+}

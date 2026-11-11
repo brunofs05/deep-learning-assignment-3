@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-teacher = ["open_clip_torch>=2.26"]
+teacher = ["open_clip_torch>=2.26", "transformers>=4.40", "sentencepiece>=0.2"]
 cam = ["grad-cam>=1.5"]
 
 [build-system]

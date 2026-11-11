@@ -1,0 +1,8 @@
+{
+  "f1_macro": 0.38054913970138443,
+  "accuracy": 0.4352651048088779,
+  "n": 811,
+  "teacher": "siglip",
+  "hf_id": "hf-hub:timm/ViT-B-16-SigLIP",
+  "split": "test_public"
+}

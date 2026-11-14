@@ -7,14 +7,14 @@ Resumo rápido:
 
 | Tema | Decisão |
 |---|---|
-| Trilha da Parte 1 | **C — Professor e aluno** (professor: SigLIP; **CLIP-L pendente**, ver 6b.7) |
+| Trilha da Parte 1 | **C — Professor e aluno** (professor final: **CLIP-L**, ver 6c.2) |
 | Backbone (Parte 0 b em diante) | **ResNet-18, pesos ImageNet (torchvision IMAGENET1K_V1)** |
 | Resolução de entrada | **384 px** (escolhida no val) |
 | Métrica de seleção | **F1 macro no val** (desempate: menor loss de val) |
-| Compute | Planejado: 1080 Ti local + Kaggle. **Na prática (Parte 1): tudo em CPU nesta máquina** (sem GPU NVIDIA), ver 6b.3/6b.4 |
-| Professor (Trilha C) | **SigLIP ViT-B/16**, melhorado com os 105 rótulos (probe + zero-shot); **CLIP-L pendente** (6b.7) |
+| Compute | Parte 1 em CPU (máquina da Elisa, 6b.3/6b.4); **Parte 2 na GTX 1080 Ti** (Kaggle não foi necessário), ver 6c.1 |
+| Professor (Trilha C) | **CLIP-L ViT-L/14**, melhorado com os rótulos do orçamento (probe + zero-shot); escolhido por **CV nos 105 rótulos** sobre o SigLIP (6c.2) |
 | Tratamento do ruído | Professor melhorado + rótulos verdadeiros pesados; filtro τ e temperatura testados e **descartados** (τ = 0, T = 1), ver 6b.8 e 6b.11 |
-| Aluno (Parte 1) | ResNet-18, **224 px**, 15 épocas, 1 seed (o piso usa 384 px), ver 6b.10 |
+| Aluno | ResNet-18, **384 px** (igual ao piso), 15 épocas, τ = 0, T = 1; Parte 2: b1 s0, b5 s{0,1,2}, b20 s0 (6c.3) |
 | Ambiente | **uv**, Python 3.11, PyTorch do índice **cu126** |
 
 ---
@@ -444,10 +444,86 @@ de rejeição teria de ser calibrado, e sem imagens OOD rotuladas só dá para c
 
 ---
 
-## 7. Em aberto (decidir na Trilha C)
+## 6c. Parte 2 — curva de orçamento (e revisão da Parte 1)
 
-- **Qual professor:** a Parte 1 foi fechada com o **SigLIP melhorado** (6b.9, 6b.12). Falta rodar o **CLIP-L** (melhor zero-shot, 6b.5) e decidir o final, comparando alunos no val.
+Revisão completa da Parte 1 em `docs/REVISAO_PARTE1.md`. Reproduzir tudo: `uv run python scripts/run_parte2.py`
+(~1h10 na 1080 Ti, retomável; log em `runs/parte2.log`, GPU em `runs/parte2_gpu.csv`).
+
+### 6c.1 Parte 2 roda na GTX 1080 Ti local — 2026-11-13 (ajusta 6b.3/6b.4)
+**Decisão:** tudo da Parte 2 (professores, professor melhorado, alunos) roda na 1080 Ti local; o Kaggle não foi usado.
+**Por quê:** medimos antes: em 384 px a GPU treina ~226 img/s e o carregamento entrega ~670 img/s com 11 workers,
+então a GPU é o gargalo (uso medido de 95–99% durante os alunos, ~4,4 GB de memória, 84–86 °C). Cada aluno leva
+~11–13 min; o pipeline inteiro, ~1h10. O cache de imagens (item da seção 7) **não foi necessário**.
+**Correção junto:** `teacher.py` ligava FP16 em qualquer GPU; na Pascal FP16 é muito lento, então passou a usar
+`amp_enabled` (FP32 na 1080 Ti). Os embeddings do SigLIP regenerados na GPU reproduzem os da CPU (zero-shot idêntico,
+argmax dos logits do train 100% igual).
+
+### 6c.2 Professor final: CLIP-L, escolhido por CV nos 105 rótulos — 2026-11-13 (resolve 6b.7 e item da seção 7)
+**Decisão:** extraímos SigLIP e CLIP-L e escolhemos pelo **F1 macro de validação cruzada (5 dobras) do professor
+melhorado nos 105 rótulos do orçamento 5**. CLIP-L 0,598 × SigLIP 0,535 → **CLIP-L**. O mesmo professor vale para os
+três orçamentos.
+
+**Por quê:** a escolha anterior olhava o F1 no test_public (6b.5). O enunciado deixa o professor olhar o test_public
+**para medi-lo**, mas usar esse número para escolher é seleção de modelo no teste; o val também não pode (o professor
+não o vê). A CV nos próprios rótulos do orçamento é o único critério que não toca em nenhum dos dois.
+Os números do test_public ficam só como relato (`results/parte2/comparacao_professores.csv`):
+
+| Professor | CV nos 105 rótulos | Zero-shot (test_public) | Melhorado b5 (test_public) |
+|---|---|---|---|
+| SigLIP ViT-B/16 | 0,535 | 0,381 | 0,548 |
+| **CLIP-L ViT-L/14** | **0,598** | 0,451 | **0,641** |
+
+**Consequência:** a análise da Parte 1 (6b.9–6b.13) foi feita com o SigLIP. Os scripts dela foram refeitos com o
+CLIP-L (`results/trilha_c/clip-l/`, `results/teacher/clip-l/improved_b5/`); a leitura qualitativa (ruído
+estruturado) se mantém (ver 6c.5).
+
+### 6c.3 Aluno da Parte 2: 384 px, τ = 0, T = 1, sem novo sweep — 2026-11-13 (ajusta 6b.10)
+**Decisão:** aluno em **384 px** (igual ao piso), 15 épocas, τ = 0, T = 1, `labeled-repeat` = 5. Runs: b1 s0,
+b5 s{0, 1, 2}, b20 s0, como pede o enunciado. τ e T **não** foram re-escolhidos em 384 px nem com o CLIP-L.
+
+**Por quê:** 384 px tira a ressalva "aluno × piso mistura método e resolução". O sweep de τ/T (6b.11) mostrou que o
+filtro não ajuda; refazê-lo custaria ~40 min para uma conclusão que dificilmente muda.
+**Ressalva:** τ = 0, T = 1 foram escolhidos no val com SigLIP e 224 px.
+
+### 6c.4 Professor melhorado no orçamento 1: α e C fixos — 2026-11-13
+**Decisão:** com 1 rótulo por classe não existe CV; o `teacher_improve.py` usa α = 0,5 e C = 10 a priori.
+**Por quê:** não há como escolher sem tocar no val/test. É uma limitação a dizer na apresentação.
+
+### 6c.5 Resultados da Parte 2 (test_public, só reportar) — 2026-11-13
+`results/curva_orcamento.csv`, `results/parte2/curva_orcamento.png`, `results/parte2/ganho_por_classe_b5.{csv,png}`.
+
+| Rótulos/classe | Piso | **Aluno (CLIP-L)** | Professor CLIP-L melhorado | Professor zero-shot | Teto |
+|---|---|---|---|---|---|
+| 1 | 0,214 | **0,523** | 0,513 | 0,451 | 0,686 |
+| 5 (3 seeds) | 0,454 ± 0,027 | **0,625 ± 0,038** | 0,641 | 0,451 | 0,686 |
+| 20 | 0,602 | **0,723** | 0,751 | 0,451 | 0,686 |
+
+- **O aluno recupera ~74% da distância piso→teto no orçamento 5** ((0,625 − 0,454) / (0,686 − 0,454)), sem nenhum
+  rótulo a mais, num modelo de 11,2M parâmetros que roda em CPU.
+- **Com 1 rótulo/classe (21 imagens) o aluno (0,523) já supera o piso com 5 rótulos/classe (0,454, 105 imagens)**:
+  o professor faz 21 rótulos valerem mais que 105 rótulos sozinhos. Ainda fica abaixo do piso com 20 (0,602).
+- **Com 20 rótulos/classe aluno e professor passam do teto** (0,723 e 0,751 > 0,686), que usa todos os rótulos do
+  train mas não usa o CLIP-L. O enunciado já avisava que o teto é referência, não limite.
+- **O aluno fica ~0,02–0,03 abaixo do professor** em 5 e 20 e empata em 1: ele destila quase tudo, mas não supera.
+- **Ganho por classe (b5, média de 3 seeds):** maiores ganhos em american_crow (+0,51), american_black_bear (+0,47),
+  red_fox, striped_skunk, horse e grey_fox (~+0,30). Sem ganho: white_tailed_deer, chicken, dog, eastern_chipmunk
+  (já eram fáceis para o piso, F1 > 0,75). **Único retrocesso: domestic_cat (0,29 → 0,09).**
+- **Por que o gato piora:** o próprio professor só acerta 6 de 48 gatos no test_public (espalha em red_fox, woodchuck,
+  raccoon). O aluno herda esse ruído estruturado, e cada seed erra para um lugar diferente (fox_squirrel, red_fox,
+  woodchuck). É o mesmo padrão da Parte 1: onde o professor erra de forma sistemática, o aluno copia.
+- **Variância entre seeds do aluno é alta** (0,583–0,656 em b5). A seed com **melhor val** (s1, val F1 0,603) é a de
+  **pior test_public** (0,583): com 202 imagens no val, a seleção pelo val é ruidosa. Ver 7 (modelo entregue).
+- **Confiança como sinal de erro/OOD (aluno CLIP-L b5 s0):** 0,60 nos acertos × 0,27 nos erros, AUROC 0,876
+  (era 0,82 com o SigLIP), `results/trilha_c/clip-l/confianca_aluno.json`.
+
+---
+
+## 7. Em aberto
+
+- ~~Qual professor~~ → **CLIP-L**, escolhido por CV nos 105 rótulos (6c.2).
 - ~~Prompts do zero-shot~~ → ensemble de 4 templates (ver 6b.2).
 - ~~Tratamento do ruído~~ → ver 6b.8 (professor melhorado + filtro τ + rótulos suaves com T). τ e T: escolhidos no val, τ = 0 e T = 1 (6b.11).
-- **Cache das imagens pré-redimensionadas** para treinar o aluno nas 6.505 imagens (hoje a GPU fica em ~30% por gargalo de leitura de JPEG).
+- ~~Cache das imagens~~ → desnecessário em 384 px: a GPU fica em 95–99% (6c.1).
+- **Modelo entregue (`weights/model.pt`, Parte 3):** aluno CLIP-L do orçamento 5. A regra é escolher a seed pelo **val** (→ s1, val F1 0,603), mesmo que ela tenha o pior test_public (0,583); escolher pelo test_public seria sobreajuste. Decidir.
+- **Parte 3:** galeria de 3 erros + 5 acertos com Grad-CAM sobre o modelo entregue.
 - ~~Sinal de out-of-distribution~~ → respondido em 6b.14 (sem implementar). [original:] para a pergunta da capivara (ex.: confiança máxima baixa, entropia, distância no espaço de features do professor).

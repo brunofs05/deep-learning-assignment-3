@@ -27,3 +27,15 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
 - Determinismo do cuDNN, ETA por época e um orquestrador retomável (`scripts/run_parte0.py`).
 - Conferimos o `predict.py` no cenário do monitor (CPU, sem GPU): 811 imagens em 17 s, saída idêntica ao `evaluate.py`.
 - Incidente: a IA sobrescreveu o `.gitignore` original sem olhar antes; percebemos no `git status` e restauramos.
+
+### 2026-11-13 — Revisão da Parte 1 (branch da Elisa) e Parte 2 na GTX 1080 Ti
+- Pedimos à IA (Claude Code) uma revisão cuidadosa da Parte 1 contra o enunciado. Resultado em `docs/REVISAO_PARTE1.md`:
+  requisitos atendidos; problemas de coerência/rigor apontados e corrigidos (FP16 forçado na Pascal no `teacher.py`,
+  aluno em 224 px × piso em 384 px, professor escolhido olhando o test_public, "cobertura" por classe calculada errado).
+- A IA perguntou antes de decidir: escolhemos (1) comparar SigLIP e CLIP-L e escolher por **CV nos 105 rótulos**
+  (critério que não toca val nem test), (2) aluno em 384 px, (3) manter τ = 0, T = 1 sem novo sweep.
+- Antes de rodar, a IA mediu o hardware (GPU 226 img/s × dataloader 670 img/s em 384 px → GPU é o gargalo, cache
+  desnecessário) e montou `scripts/run_parte2.py` com ETA global e monitor de GPU (uso 95–99% medido).
+- Verificamos reprodutibilidade: embeddings do SigLIP regenerados na GPU deram o mesmo zero-shot da CPU.
+- O pipeline falhou no último passo (pasta inexistente num script da Parte 1); corrigido e re-executado, pulando os treinos.
+- A IA investigou o retrocesso de `domestic_cat` e mostrou que vem do professor (6/48 acertos), não do aluno.

@@ -49,6 +49,7 @@ python predict.py --imagens PASTA --saida preds.csv   # usa weights/model.pt, CP
 | O quê | Comando | Saída |
 |---|---|---|
 | Parte 0 (sweep no val + piso) + piso da Parte 2 | `uv run python scripts/run_parte0.py` (~1 h na 1080 Ti, retomável) | `results/parte0/`, `results/curva_orcamento.csv` |
+| Parte 1 + 2 (professores, aluno, curva de orçamento) | `uv sync --extra teacher` e `uv run python scripts/run_parte2.py` (~1h10 na 1080 Ti, retomável) | `results/teacher/`, `results/trilha_c/`, `results/parte2/`, `results/curva_orcamento.csv` |
 
 ## Estrutura
 

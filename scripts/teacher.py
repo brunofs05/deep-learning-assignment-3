@@ -26,7 +26,7 @@ from torchvision import transforms as T
 from pa3.data import ImageDataset, load_classes, load_split
 from pa3.metrics import compute_metrics, per_class_table, plot_confusion
 from pa3.paths import RESULTS_DIR, RUNS_DIR
-from pa3.utils import fmt_time, get_device, save_json, seed_everything
+from pa3.utils import amp_enabled, fmt_time, get_device, save_json, seed_everything
 # nome curto -> id open_clip (pesos abertos no Hugging Face)
 MODELS = {
     "bioclip": "hf-hub:imageomics/bioclip",
@@ -67,15 +67,20 @@ def text_embeddings(model, tokenizer, classes, device):
 
 
 @torch.no_grad()
-def image_embeddings(model, df, tfm, device, batch_size, workers):
+def image_embeddings(model, df, tfm, device, batch_size, workers, amp):
     dl = DataLoader(ImageDataset.from_df(df, tfm), batch_size=batch_size, num_workers=workers)
     out, t0 = [], time.time()
     for b, (x, _) in enumerate(dl):
-        with torch.autocast(device_type=device.type, enabled=device.type == "cuda"):
+        # FP16 só em GPU com tensor cores; na Pascal (1080 Ti) FP16 é muito mais lento que FP32
+        with torch.autocast(device_type=device.type, enabled=amp):
             e = model.encode_image(x.to(device)).float()
         out.append((e / e.norm(dim=-1, keepdim=True)).cpu())
         if b % 20 == 0:
-            print(f"  {b + 1}/{len(dl)} lotes | {fmt_time(time.time() - t0)}", flush=True)
+            el = time.time() - t0
+            eta = el / (b + 1) * (len(dl) - b - 1)
+            print(f"  {b + 1}/{len(dl)} lotes | {(b + 1) * batch_size / max(el, 1e-9):.0f} img/s | "
+                  f"decorrido {fmt_time(el)}, ETA {fmt_time(eta)}", flush=True)
+    print(f"  {len(df)} imagens em {fmt_time(time.time() - t0)}", flush=True)
     return torch.cat(out)
 
 
@@ -86,7 +91,7 @@ def main():
     p.add_argument("--splits", nargs="+", default=["test_public", "train_all"],
                    choices=["test_public", "train_all"], help="o val é proibido")
     p.add_argument("--batch-size", type=int, default=64)
-    p.add_argument("--workers", type=int, default=4)
+    p.add_argument("--workers", type=int, default=10)
     p.add_argument("--device", default="auto")
     args = p.parse_args()
 
@@ -101,7 +106,9 @@ def main():
     model = model.to(device).eval()
     tfm = full_frame_transform(model, preprocess)
     scale = model.logit_scale.exp().item()
-    print(f"[{args.name}] {hf_id} | {sum(p.numel() for p in model.parameters()):,} params | {device}", flush=True)
+    amp = amp_enabled("auto", device)
+    print(f"[{args.name}] {hf_id} | {sum(p.numel() for p in model.parameters()):,} params | {device} amp={amp}",
+          flush=True)
 
     emb_dir = RUNS_DIR / "teacher" / args.name
     res_dir = RESULTS_DIR / "teacher" / args.name
@@ -114,7 +121,7 @@ def main():
     for split in args.splits:
         df = load_split(split)
         print(f"{split}: {len(df)} imagens", flush=True)
-        emb = image_embeddings(model, df, tfm, device, args.batch_size, args.workers)
+        emb = image_embeddings(model, df, tfm, device, args.batch_size, args.workers, amp)
         logits = scale * emb @ txt.T
         np.save(emb_dir / f"emb_{split}.npy", emb.numpy().astype(np.float16))
         np.save(res_dir / f"logits_{split}.npy", logits.numpy().astype(np.float32))

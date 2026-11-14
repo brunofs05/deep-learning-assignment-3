@@ -34,6 +34,7 @@ def main():
     res = {"conf_media_acertos": float(pr["conf"][ok].mean()), "conf_media_erros": float(pr["conf"][~ok].mean()),
            "auroc_conf_acerto": float(roc_auc_score(ok, pr["conf"])), "n": int(len(pr))}
     out = RESULTS_DIR / "trilha_c" / args.teacher / "confianca_aluno.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     save_json(res, out)
     print(res)
 

@@ -28,6 +28,7 @@ def main():
     d["aluno_menos_piso"] = d["f1_aluno"] - d["f1_piso_3seeds"]
     d = d.sort_values("aluno_menos_prof", ascending=False)
     out = RESULTS_DIR / "trilha_c" / args.teacher / "aluno_vs_professor_b5.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
     d.round(4).to_csv(out)
     print(d.round(2).to_string())
     print(d[["f1_piso_3seeds", "f1_prof_zeroshot", "f1_prof_melhorado", "f1_aluno"]].mean().round(3).to_string())

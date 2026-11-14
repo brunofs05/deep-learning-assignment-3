@@ -146,10 +146,14 @@ def main():
     for tau in TAUS:
         keep = conf >= tau
         for c in range(nc):
-            sel = keep & (pred == c)
+            sel = keep & (pred == c)          # pseudo-rotulados como c que passam no filtro
+            true_c = y_te == c
             rows.append({"tau": tau, "classe": classes[c], "n_previstos": int(sel.sum()),
                          "precisao": float((y_te[sel] == c).mean()) if sel.sum() else float("nan"),
-                         "cobertura": float(sel.sum() / max((y_te == c).sum(), 1))})
+                         # cobertura: fração das imagens da classe c que recebem pseudo-rótulo (passam no filtro)
+                         "cobertura": float((keep & true_c).sum() / max(true_c.sum(), 1)),
+                         # fração da classe c que recebe o pseudo-rótulo CERTO
+                         "recall_correto": float((sel & true_c).sum() / max(true_c.sum(), 1))})
         rows.append({"tau": tau, "classe": "(todas)", "n_previstos": int(keep.sum()),
                      "precisao": float((pred[keep] == y_te[keep]).mean()) if keep.sum() else float("nan"),
                      "cobertura": float(keep.mean())})

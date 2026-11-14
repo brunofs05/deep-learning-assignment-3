@@ -54,3 +54,20 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
   pois escolher pelo test_public seria sobreajuste.
 - Os diagnósticos dos erros e a leitura dos acertos serão escritos por nós depois de ver as imagens do modelo final;
   a IA só gera as figuras e as métricas de apoio.
+
+### 2026-11-14 — Revisão da Parte 3 e execução com o modelo entregue (Claude Code, Opus)
+- Pedimos à IA que revisasse os commits da Parte 3 contra o enunciado e rodasse o que faltava. O checkpoint da seed 1
+  já existia na máquina com GPU (run da Parte 2), então **não retreinamos**: `weights/model.pt` é cópia byte a byte dele.
+  O `predict.py` em CPU reproduziu 811/811 previsões da run (F1 0,583, 11.187.285 parâmetros, ~40 s).
+- A IA conferiu o Grad-CAM manual da `galeria.py` contra o pacote `grad-cam` (correlação 1,00).
+- Lacuna apontada: o enunciado pede o **tamanho do animal depois do redimensionamento** e o pacote não traz caixas. A
+  IA estimou à vista as caixas das 8 imagens da galeria (`results/parte3/caixas_animais.csv`), **só para análise**
+  (nunca em treino, seleção ou como rótulo de classe), e a `galeria.py` ganhou `--caixas` (tamanho na entrada 384×384,
+  pico do CAM no animal, fração da região quente no animal). Devemos conferir essas caixas.
+- A IA propôs e implementou `scripts/vizinhos_galeria.py` (vizinhas no train pelas features do modelo e o rótulo com
+  que entraram no treino). Resultado: os 3 erros têm 5/5 vizinhas da mesma cena com o rótulo previsto; no test_public,
+  acurácia de 0,90 quando a vizinha tem o rótulo certo × 0,24 quando tem o errado. É evidência de atalho de cenário.
+- Os diagnósticos em `results/parte3/README.md` foram redigidos com a IA a partir das figuras e números;
+  **revisamos e assumimos** a leitura antes de apresentar.
+- Também corrigido: o "um comando que treina" do README treinava o piso, não o modelo entregue. Agora é o comando do
+  aluno (testado em smoke test), e o "avaliar" aponta para a run do modelo entregue.

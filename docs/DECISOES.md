@@ -16,6 +16,8 @@ Resumo rápido:
 | Tratamento do ruído | Professor melhorado + rótulos verdadeiros pesados; filtro τ e temperatura testados e **descartados** (τ = 0, T = 1), ver 6b.8 e 6b.11 |
 | Aluno | ResNet-18, **384 px** (igual ao piso), 15 épocas, τ = 0, T = 1; Parte 2: b1 s0, b5 s{0,1,2}, b20 s0 (6c.3) |
 | Ambiente | **uv**, Python 3.11, PyTorch do índice **cu126** |
+| Modelo entregue | Aluno CLIP-L b5 **seed 1** (melhor val, F1 0,603; test_public 0,583), `weights/model.pt` (6d.1, 7) |
+| Parte 3 | Grad-CAM + caixas estimadas + vizinhos no train: erros e um acerto vêm do **cenário/câmera** (6d) |
 
 ---
 
@@ -541,6 +543,35 @@ apresentação são estes. `aluno_vs_professor_b5.csv` agora usa a **média das 
 - **No geral o aluno não supera o professor** (0,625 × 0,641), mas o entregável tem que ser o aluno: o professor
   (CLIP-L, ~428M parâmetros) não pode fazer parte do modelo entregue.
 
+## 6d. Parte 3 — galeria de falhas e atalhos (2026-11-14)
+Detalhes, figuras e diagnósticos em `results/parte3/README.md`.
+
+### 6d.1 Modelo entregue = checkpoint da run da Parte 2, sem retreinar
+**Decisão:** `weights/model.pt` é cópia byte a byte de `runs/aluno_clip-l_b5_s1/best.pt` (sha256 `12c61be1…`).
+**Por quê:** é o mesmo modelo cujos números estão em `curva_orcamento.csv`. Retreinar daria um modelo ligeiramente
+diferente (não determinismo de GPU/dataloader). Conferido: `predict.py` em CPU reproduz 811/811 das previsões da run
+(F1 0,583), com 11.187.285 parâmetros, em ~40 s.
+
+### 6d.2 Seleção e saliência
+- Erros: os 3 de maior confiança (um por classe verdadeira); acertos: 5 sorteados (semente 0, um por classe). Regra
+  fixada pela Elisa antes de rodar o modelo final; mantida.
+- Grad-CAM próprio na `layer4`, conferido contra o pacote `grad-cam` (correlação 1,00 em 5 imagens).
+- **Caixas do animal estimadas à vista** (`results/parte3/caixas_animais.csv`, 8 imagens, com ajuda da IA): o enunciado
+  pede o tamanho do animal depois do redimensionamento, e o pacote não traz caixas. São só análise: não entram em
+  treino nem em seleção, e não são rótulos de classe. Com elas: tamanho na entrada 384×384, pico do CAM no animal,
+  fração da região quente no animal.
+- Heurística "tons de cinza" (saturação < 0,08), renomeada de `noturna` para `cinza_ir`: várias fotos cinza são diurnas
+  com a câmera em modo monocromático.
+
+### 6d.3 Teste de atalho com vizinhos no train (acrescentado)
+**Decisão:** além do CAM, `scripts/vizinhos_galeria.py` mostra as 5 imagens do train mais parecidas (features do modelo
+entregue) e o rótulo com que entraram no treino.
+**Por quê:** o CAM diz *onde* o modelo olhou, mas não *por que* errou. Os vizinhos ligam o erro ao que o aluno aprendeu.
+**Resultado:** nos 3 erros, as 5 vizinhas são a mesma cena com o rótulo previsto (no dog → chicken, uma é rótulo
+verdadeiro de chicken). No test_public inteiro, 87,5% das imagens têm vizinha com cos ≥ 0,9, e a acurácia é 0,90 quando
+a vizinha tem o rótulo certo × 0,24 quando tem o errado. Leitura: boa parte do desempenho vem de reconhecer a
+câmera/cena, e o ruído do professor entra por cenas inteiras pseudo-rotuladas errado. É correlação, não prova causal.
+
 ---
 
 ## 7. Em aberto
@@ -555,9 +586,10 @@ apresentação são estes. `aluno_vs_professor_b5.csv` agora usa a **média das 
     Isso não é motivo para trocar: escolher a seed olhando o test_public seria sobreajuste ao teste, e o test_private
     serviria justamente para flagrar isso. O val tem só 202 imagens, então a seleção por ele é ruidosa (ver 6c, ressalvas).
     O número a defender para o modelo entregue é 0,583; a média de 3 seeds (0,625 ± 0,038) mostra o desempenho esperado do método.
-  - **Reprodução:** o checkpoint não está versionado (`weights/` e `runs/` no .gitignore). Para regenerar numa GPU:
-    `uv run python scripts/train_student.py --teacher clip-l --budget 5 --seed 1 --tau 0 --temp 1 --img-size 384 --epochs 15 --method aluno_clip-l --run-name aluno_clip-l_b5_s1`,
-    depois `mkdir -p weights && cp runs/aluno_clip-l_b5_s1/best.pt weights/model.pt`. Conferir que o val F1 e o test_public batem com 0,603 e 0,583.
-- **Parte 3:** galeria de 3 erros + 5 acertos com Grad-CAM sobre o modelo entregue. `scripts/galeria.py` está pronto e testado
-  (com um checkpoint SigLIP antigo); falta rodar com `weights/model.pt` e escrever os diagnósticos (ver `docs/fazer_placa_de_video.md`).
+  - **Pesos:** `weights/model.pt` = cópia de `runs/aluno_clip-l_b5_s1/best.pt` (6d.1). Fica fora do git (`*.pt` no
+    .gitignore) e está no release `v1.0` do GitHub (link no README). Retreinar com o comando do README reproduz a receita, mas não necessariamente
+    os mesmos pesos bit a bit.
+- ~~Parte 3~~ → feita (6d, `results/parte3/README.md`): 3 erros + 5 acertos com Grad-CAM, caixas, vizinhos no train.
+  Os diagnósticos foram redigidos com a IA a partir das figuras; a dupla deve revisá-los antes de apresentar.
+- ~~Publicar os pesos~~ → release `v1.0` do GitHub (link no README; sha256 conferido após o download). O repositório é privado: o monitor precisa ter acesso.
 - ~~Sinal de out-of-distribution~~ → respondido em 6b.14 (sem implementar). [original:] para a pergunta da capivara (ex.: confiança máxima baixa, entropia, distância no espaço de features do professor).

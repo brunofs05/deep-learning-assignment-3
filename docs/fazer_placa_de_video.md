@@ -1,5 +1,9 @@
 # O que falta fazer na máquina com a placa de vídeo (GTX 1080 Ti)
 
+> **Status 2026-11-14: feito** na máquina com a 1080 Ti, exceto a publicação dos pesos. Passos 1–3 executados sem
+> retreinar (o checkpoint da seed 1 já existia; ver `docs/DECISOES.md` 6d). Pesos publicados no release
+> `v1.0` do GitHub (link no README). Mantido abaixo como registro.
+
 Tudo o que dava para fazer sem GPU já foi feito (Partes 0, 1, 2, `predict.py`, `scripts/galeria.py`).
 Falta só o que depende do **checkpoint do aluno entregue**, que não existe na máquina sem NVIDIA
 (`runs/` e `weights/` estão no `.gitignore`). Prazo de entrega: **16/11, 23h59**.

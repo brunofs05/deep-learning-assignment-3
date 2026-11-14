@@ -6,6 +6,15 @@ Roda o modelo no test_public (só para REPORTAR, nada é escolhido com ele), cal
   * `galeria_erros.png`, `galeria_acertos.png` — painéis para os slides;
   * `candidatos_erros.csv`, `selecao.csv`, `metricas_cam_test_public.csv` — lastro numérico.
 
+Caixas do animal (opcional, --caixas CSV com image_id,x0,y0,x1,y1 em pixels da imagem original): o dataset não traz
+caixas, então elas são estimadas olhando as 8 imagens da galeria, só para a análise (nunca entram em treino nem em
+seleção). Com elas o script desenha a caixa, dá o tamanho do animal DEPOIS do redimensionamento para a entrada do
+modelo (ex.: 384×384, sem preservar proporção) e mede `cam_massa_caixa` = fração da massa do Grad-CAM dentro da caixa.
+`cam_razao_caixa` = massa / área relativa da caixa (1 = CAM espalhado ao acaso; > 1 = concentrado no animal).
+`pico_na_caixa` = o máximo do CAM cai dentro da caixa; `quente_na_caixa` = fração da região quente (CAM ≥ 0,5 do
+máximo) que cai dentro da caixa. O CAM da layer4 tem resolução 12×12 (384/32), então é borrado: um animal pequeno
+nunca concentra muita massa, e o pico e a região quente são as leituras mais diretas.
+
 Seleção (determinística, sem olhar o desfecho "bonito"):
   * erros: os de MAIOR confiança, uma classe verdadeira por erro (erro confiante = falha mais grave). Para trocar,
     use --erros ID1 ID2 ID3 depois de olhar `candidatos_erros.csv`;
@@ -16,7 +25,6 @@ Ex.: python scripts/galeria.py --pesos weights/model.pt
 from __future__ import annotations
 
 import argparse
-import colorsys
 
 import matplotlib
 
@@ -83,19 +91,43 @@ def mean_saturation(img: Image.Image) -> float:
     return float(np.mean((mx - mn) / (mx + 1e-6)))
 
 
-def overlay(ax, img: Image.Image, cam_full: np.ndarray | None, title: str):
+CAIXAS: dict[str, tuple[int, int, int, int]] = {}
+
+
+def box_stats(cam_full: np.ndarray, box, img_size: int, wh: tuple[int, int]) -> dict:
+    """Tamanho do animal na entrada do modelo e massa do CAM dentro da caixa."""
+    x0, y0, x1, y1 = box
+    W, H = wh
+    c = cam_full / (cam_full.sum() + 1e-9)
+    massa = float(c[y0:y1, x0:x1].sum())
+    area = (x1 - x0) * (y1 - y0) / (W * H)
+    inside = np.zeros_like(cam_full, dtype=bool)
+    inside[y0:y1, x0:x1] = True
+    py, px = np.unravel_index(cam_full.argmax(), cam_full.shape)
+    quente = cam_full >= 0.5  # região "quente" do CAM (≥ 50% do máximo)
+    return {"animal_px_entrada": f"{round((x1 - x0) * img_size / W)}x{round((y1 - y0) * img_size / H)}",
+            "caixa_area_frac": area, "cam_massa_caixa": massa, "cam_razao_caixa": massa / area,
+            "pico_na_caixa": bool(inside[py, px]),
+            "quente_na_caixa": float((quente & inside).sum() / max(quente.sum(), 1))}
+
+
+def overlay(ax, img: Image.Image, cam_full: np.ndarray | None, title: str, box=None):
     ax.imshow(img)
     if cam_full is not None:
         ax.imshow(cam_full, cmap="jet", alpha=0.45, vmin=0, vmax=1)
+    if box is not None:
+        x0, y0, x1, y1 = box
+        ax.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, ec="white", lw=1.5, ls="--"))
     ax.set_title(title, fontsize=8)
     ax.axis("off")
 
 
 def figura_erro(path, img, row, cam_pred, cam_true):
     fig, axs = plt.subplots(1, 3, figsize=(13, 4.2))
-    overlay(axs[0], img, None, f"{row.image_id}\nverdadeira: {row.label}")
-    overlay(axs[1], img, cam_pred, f"CAM da classe PREVISTA: {row.pred}\nconfiança {row.conf:.2f}")
-    overlay(axs[2], img, cam_true, f"CAM da classe VERDADEIRA: {row.label}")
+    b = CAIXAS.get(row.image_id)
+    overlay(axs[0], img, None, f"{row.image_id}\nverdadeira: {row.label}", b)
+    overlay(axs[1], img, cam_pred, f"CAM da classe PREVISTA: {row.pred}\nconfiança {row.conf:.2f}", b)
+    overlay(axs[2], img, cam_true, f"CAM da classe VERDADEIRA: {row.label}", b)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -103,25 +135,35 @@ def figura_erro(path, img, row, cam_pred, cam_true):
 
 def figura_acerto(path, img, row, cam_pred):
     fig, axs = plt.subplots(1, 2, figsize=(9, 4.2))
-    overlay(axs[0], img, None, f"{row.image_id}\nverdadeira = prevista: {row.label}")
-    overlay(axs[1], img, cam_pred, f"CAM | confiança {row.conf:.2f}")
+    b = CAIXAS.get(row.image_id)
+    overlay(axs[0], img, None, f"{row.image_id}\nverdadeira = prevista: {row.label}", b)
+    overlay(axs[1], img, cam_pred, f"CAM | confiança {row.conf:.2f}", b)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
 
 
 def painel(path, itens, titulo):
-    """itens: lista de (img, cam, legenda)."""
+    """itens: lista de (img, cam, legenda, image_id, legenda_cam)."""
     n = len(itens)
     fig, axs = plt.subplots(2, n, figsize=(3.6 * n, 6.6))
     axs = np.asarray(axs).reshape(2, n)
-    for j, (img, cam, leg) in enumerate(itens):
-        overlay(axs[0, j], img, None, leg)
-        overlay(axs[1, j], img, cam, "Grad-CAM (classe prevista)")
+    for j, (img, cam, leg, iid, leg_cam) in enumerate(itens):
+        overlay(axs[0, j], img, None, leg, CAIXAS.get(iid))
+        overlay(axs[1, j], img, cam, leg_cam, CAIXAS.get(iid))
+        for ax in axs[:, j]:
+            ax.set_aspect("auto")  # mesma altura para imagens de proporções diferentes
     fig.suptitle(titulo)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
+
+
+def _leg_cam(st: dict) -> str:
+    if not st:
+        return "Grad-CAM (classe prevista)"
+    pico = "pico no animal" if st["pico_na_caixa"] else "pico FORA do animal"
+    return f"Grad-CAM (prevista) | {pico}\nanimal {st['animal_px_entrada']} px na entrada"
 
 
 def main():
@@ -134,7 +176,11 @@ def main():
     ap.add_argument("--acertos", nargs="*", default=None, help="image_ids dos acertos (sobrescreve o sorteio)")
     ap.add_argument("--seed", type=int, default=0, help="semente do sorteio dos acertos")
     ap.add_argument("--limite", type=int, default=None, help="só as N primeiras imagens (teste rápido)")
+    ap.add_argument("--caixas", default=None, help="CSV image_id,x0,y0,x1,y1 (caixas do animal, estimadas à vista)")
     args = ap.parse_args()
+    if args.caixas:
+        cx = pd.read_csv(args.caixas)
+        CAIXAS.update({r.image_id: (int(r.x0), int(r.y0), int(r.x1), int(r.y1)) for r in cx.itertuples()})
 
     out = __import__("pathlib").Path(args.saida)
     out.mkdir(parents=True, exist_ok=True)
@@ -165,7 +211,8 @@ def main():
         if k % 100 == 0:
             print(f"{k}/{len(df)}", flush=True)
     res = pd.DataFrame(rows)
-    res["noturna"] = res["saturacao"] < 0.08
+    # foto em tons de cinza: IR noturno ou câmera em modo monocromático (heurística de cor, não metadado)
+    res["cinza_ir"] = res["saturacao"] < 0.08
     res.to_csv(out / "metricas_cam_test_public.csv", index=False)
     print(f"test_public: acurácia {res.acertou.mean():.3f} em {len(res)} imagens")
 
@@ -180,11 +227,10 @@ def main():
         sel_a = ac.set_index("image_id").loc[args.acertos].reset_index()
     else:
         sel_a = ac.sample(frac=1, random_state=args.seed).drop_duplicates("label").head(args.n_acertos)
-    sel = pd.concat([sel_e.assign(grupo="erro"), sel_a.assign(grupo="acerto")])
-    sel.to_csv(out / "selecao.csv", index=False)
+    sel = pd.concat([sel_e.assign(grupo="erro"), sel_a.assign(grupo="acerto")]).reset_index(drop=True)
 
     # ---- figuras ----
-    pe, pa = [], []
+    pe, pa, extra = [], [], {}
     for i, row in enumerate(sel_e.itertuples(), 1):
         img = Image.open(df.set_index("image_id").loc[row.image_id, "path"]).convert("RGB")
         x = tf(img)[None]
@@ -192,18 +238,30 @@ def main():
         _, c_true, _ = cam_engine(x, target=classes.index(row.label))
         cp, ct = upsample(c_pred, img.size), upsample(c_true, img.size)
         figura_erro(out / f"erro_{i}_{row.image_id}.png", img, row, cp, ct)
-        pe.append((img, cp, f"{row.label} → {row.pred}\nconf {row.conf:.2f}"))
+        extra[row.image_id] = box_stats(cp, CAIXAS[row.image_id], ckpt["img_size"], img.size) \
+            if row.image_id in CAIXAS else {}
+        if row.image_id in CAIXAS:  # massa do CAM da classe VERDADEIRA na caixa
+            extra[row.image_id]["cam_verdadeira_massa_caixa"] = box_stats(ct, CAIXAS[row.image_id], ckpt["img_size"],
+                                                                          img.size)["cam_massa_caixa"]
+        pe.append((img, cp, f"{row.label} → {row.pred}\nconf {row.conf:.2f}", row.image_id,
+                   _leg_cam(extra[row.image_id])))
     for i, row in enumerate(sel_a.itertuples(), 1):
         img = Image.open(df.set_index("image_id").loc[row.image_id, "path"]).convert("RGB")
         _, c_pred, _ = cam_engine(tf(img)[None])
         cp = upsample(c_pred, img.size)
         figura_acerto(out / f"acerto_{i}_{row.image_id}.png", img, row, cp)
-        pa.append((img, cp, f"{row.label}\nconf {row.conf:.2f}"))
+        extra[row.image_id] = box_stats(cp, CAIXAS[row.image_id], ckpt["img_size"], img.size) \
+            if row.image_id in CAIXAS else {}
+        pa.append((img, cp, f"{row.label}\nconf {row.conf:.2f}", row.image_id, _leg_cam(extra[row.image_id])))
     painel(out / "galeria_erros.png", pe, "Três erros confiantes do modelo entregue (test_public)")
     painel(out / "galeria_acertos.png", pa, "Cinco acertos sorteados (test_public)")
 
-    cols = ["image_id", "grupo", "label", "pred", "conf", "largura", "altura", "noturna", "saturacao",
-            "cam_area50", "cam_cx", "cam_cy", "cam_massa_borda"]
+    sel = sel.merge(pd.DataFrame.from_dict(extra, orient="index").rename_axis("image_id").reset_index(),
+                    on="image_id", how="left")
+    sel.to_csv(out / "selecao.csv", index=False)
+    cols = [c for c in ["image_id", "grupo", "label", "pred", "conf", "largura", "altura", "cinza_ir",
+                        "animal_px_entrada", "caixa_area_frac", "pico_na_caixa", "quente_na_caixa", "cam_razao_caixa",
+                        "cam_verdadeira_massa_caixa", "cam_massa_borda"] if c in sel]
     print(sel[cols].round(3).to_string(index=False))
     print(f"\nfiguras em {out}")
 

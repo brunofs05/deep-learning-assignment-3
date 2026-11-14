@@ -1,0 +1,11 @@
+{
+  "n":811,
+  "frac_pred_igual_rotulo_da_vizinha":0.6843403206,
+  "frac_vizinha_cos_ge_0.9":0.8754623921,
+  "acc_modelo":0.6374845869,
+  "acc_quando_vizinha_tem_rotulo_certo":0.899795501,
+  "acc_quando_vizinha_tem_rotulo_errado":0.2391304348,
+  "frac_vizinha_rotulo_certo":0.6029593095,
+  "erros_que_seguem_a_vizinha":0.3911564626,
+  "nota":"vizinha = imagem do train mais parecida nas features do modelo entregue; rótulo = o de treino (verdadeiro do orçamento ou pseudo-rótulo do professor). Só diagnóstico."
+}

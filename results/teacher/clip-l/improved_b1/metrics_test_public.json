@@ -1,0 +1,12 @@
+{
+  "f1_macro": 0.5132120590098596,
+  "accuracy": 0.5462392108508015,
+  "n": 811,
+  "teacher": "clip-l",
+  "budget": 1,
+  "C": 10.0,
+  "alpha": 0.5,
+  "cv_f1": NaN,
+  "zero_shot_f1_macro": 0.45094938026585024,
+  "zero_shot_accuracy": 0.4919852034525277
+}

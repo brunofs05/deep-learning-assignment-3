@@ -1,0 +1,12 @@
+{
+  "f1_macro": 0.4311173100355942,
+  "accuracy": 0.4833538840937115,
+  "n": 811,
+  "teacher": "siglip",
+  "budget": 1,
+  "C": 10.0,
+  "alpha": 0.5,
+  "cv_f1": NaN,
+  "zero_shot_f1_macro": 0.38054913970138443,
+  "zero_shot_accuracy": 0.4352651048088779
+}

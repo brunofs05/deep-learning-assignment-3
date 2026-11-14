@@ -1,0 +1,23 @@
+{
+  "professor": "clip-l",
+  "criterio": "maior cv_f1 no orçamento 5 (CV estratificada nos 105 rótulos)",
+  "forcado": false,
+  "comparacao": [
+    {
+      "professor": "siglip",
+      "cv_f1_b5": 0.5351798994656136,
+      "alpha": 0.75,
+      "C": 100.0,
+      "test_public_zeroshot_f1": 0.38054913970138443,
+      "test_public_melhorado_f1": 0.5478231548657884
+    },
+    {
+      "professor": "clip-l",
+      "cv_f1_b5": 0.5982380053808625,
+      "alpha": 0.75,
+      "C": 100.0,
+      "test_public_zeroshot_f1": 0.45094938026585024,
+      "test_public_melhorado_f1": 0.6411901851250439
+    }
+  ]
+}

@@ -1,7 +1,16 @@
 metodo,orcamento,seed,f1_macro,acuracia
+aluno_clip-l,1,0,0.5233,0.598
+aluno_clip-l,5,0,0.6363,0.6967
+aluno_clip-l,5,1,0.5827,0.6375
+aluno_clip-l,5,2,0.6563,0.7102
+aluno_clip-l,20,0,0.7228,0.746
 piso_resnet18,1,0,0.2138,0.2293
 piso_resnet18,5,0,0.4237,0.4834
 piso_resnet18,5,1,0.4771,0.5203
 piso_resnet18,5,2,0.461,0.4994
 piso_resnet18,20,0,0.6017,0.6412
 piso_smallcnn,5,0,0.3074,0.328
+professor_clip-l_melhorado,1,0,0.5132,0.5462
+professor_clip-l_melhorado,5,0,0.6412,0.6745
+professor_clip-l_melhorado,20,0,0.7512,0.7546
+professor_clip-l_zeroshot,0,0,0.4509,0.492

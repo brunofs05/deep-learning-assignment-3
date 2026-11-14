@@ -1,0 +1,8 @@
+{
+  "name": "clip-l",
+  "budget": 20,
+  "C": 1000.0,
+  "alpha": 1.0,
+  "seed": 0,
+  "n_labeled": 420
+}

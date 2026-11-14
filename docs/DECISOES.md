@@ -549,6 +549,15 @@ apresentação são estes. `aluno_vs_professor_b5.csv` agora usa a **média das 
 - ~~Prompts do zero-shot~~ → ensemble de 4 templates (ver 6b.2).
 - ~~Tratamento do ruído~~ → ver 6b.8 (professor melhorado + filtro τ + rótulos suaves com T). τ e T: escolhidos no val, τ = 0 e T = 1 (6b.11).
 - ~~Cache das imagens~~ → desnecessário em 384 px: a GPU fica em 95–99% (6c.1).
-- **Modelo entregue (`weights/model.pt`, Parte 3):** aluno CLIP-L do orçamento 5. A regra é escolher a seed pelo **val** (→ s1, val F1 0,603), mesmo que ela tenha o pior test_public (0,583); escolher pelo test_public seria sobreajuste. Decidir.
-- **Parte 3:** galeria de 3 erros + 5 acertos com Grad-CAM sobre o modelo entregue.
+- **Modelo entregue (`weights/model.pt`, Parte 3):** aluno CLIP-L do orçamento 5, **seed 1** (`aluno_clip-l_b5_s1`).
+  - **Regra:** a seed é escolhida pelo **val** (F1 0,603), o único critério permitido. O test_public só reporta números.
+  - **Aviso para a apresentação:** a s1 tem o **pior test_public** das três seeds (0,583, contra 0,636 da s0 e 0,656 da s2).
+    Isso não é motivo para trocar: escolher a seed olhando o test_public seria sobreajuste ao teste, e o test_private
+    serviria justamente para flagrar isso. O val tem só 202 imagens, então a seleção por ele é ruidosa (ver 6c, ressalvas).
+    O número a defender para o modelo entregue é 0,583; a média de 3 seeds (0,625 ± 0,038) mostra o desempenho esperado do método.
+  - **Reprodução:** o checkpoint não está versionado (`weights/` e `runs/` no .gitignore). Para regenerar numa GPU:
+    `uv run python scripts/train_student.py --teacher clip-l --budget 5 --seed 1 --tau 0 --temp 1 --img-size 384 --epochs 15 --method aluno_clip-l --run-name aluno_clip-l_b5_s1`,
+    depois `mkdir -p weights && cp runs/aluno_clip-l_b5_s1/best.pt weights/model.pt`. Conferir que o val F1 e o test_public batem com 0,603 e 0,583.
+- **Parte 3:** galeria de 3 erros + 5 acertos com Grad-CAM sobre o modelo entregue. `scripts/galeria.py` está pronto e testado
+  (com um checkpoint SigLIP antigo); falta rodar com `weights/model.pt` e escrever os diagnósticos (ver `docs/fazer_placa_de_video.md`).
 - ~~Sinal de out-of-distribution~~ → respondido em 6b.14 (sem implementar). [original:] para a pergunta da capivara (ex.: confiança máxima baixa, entropia, distância no espaço de features do professor).

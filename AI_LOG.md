@@ -39,3 +39,18 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
 - Verificamos reprodutibilidade: embeddings do SigLIP regenerados na GPU deram o mesmo zero-shot da CPU.
 - O pipeline falhou no último passo (pasta inexistente num script da Parte 1); corrigido e re-executado, pulando os treinos.
 - A IA investigou o retrocesso de `domestic_cat` e mostrou que vem do professor (6/48 acertos), não do aluno.
+
+### 2026-11-14 — Parte 3 (galeria de falhas) e plano do modelo entregue
+- Pedimos à IA um levantamento do que faltava contra o enunciado. Ela apontou que o `weights/model.pt` não existia
+  (os checkpoints dos alunos CLIP-L estavam só na máquina da GPU, fora do git) e que a Parte 3 não estava feita.
+- A IA percebeu que a máquina de trabalho não tinha GPU NVIDIA (`torch.cuda.is_available()` = False) e não tentou treinar
+  em CPU; em vez disso, escrevemos `scripts/galeria.py` agora e deixamos o treino do aluno para uma máquina com GPU
+  (passos em `docs/fazer_placa_de_video.md`).
+- `scripts/galeria.py`: Grad-CAM implementado à mão (hooks na `layer4`, sem depender do pacote `grad-cam`). Regra de seleção
+  fixada antes de ver os resultados: erros = os de maior confiança (um por classe); acertos = sorteio com semente fixa
+  (um por classe), para não escolher só os acertos bonitos. Testado com um checkpoint SigLIP antigo em 150 imagens
+  (o CAM caía em cerca e vegetação, não no animal); esse teste não vale como resultado.
+- Registramos em `docs/DECISOES.md` que o modelo entregue é a seed 1 (melhor val) mesmo com o pior test_public (0,583),
+  pois escolher pelo test_public seria sobreajuste.
+- Os diagnósticos dos erros e a leitura dos acertos serão escritos por nós depois de ver as imagens do modelo final;
+  a IA só gera as figuras e as métricas de apoio.

@@ -516,6 +516,31 @@ filtro não ajuda; refazê-lo custaria ~40 min para uma conclusão que dificilme
 - **Confiança como sinal de erro/OOD (aluno CLIP-L b5 s0):** 0,60 nos acertos × 0,27 nos erros, AUROC 0,876
   (era 0,82 com o SigLIP), `results/trilha_c/clip-l/confianca_aluno.json`.
 
+### 6c.6 Análises obrigatórias da Trilha C refeitas com o professor final (CLIP-L) — 2026-11-13
+As seções 6b.9–6b.13 descrevem o SigLIP em 224 px. Como o professor entregue é o CLIP-L, os números que vão para a
+apresentação são estes. `aluno_vs_professor_b5.csv` agora usa a **média das 3 seeds** (antes, uma seed).
+
+- **Matriz de ruído** (`results/teacher/clip-l/improved_b5/confusion_test_public.png`, `top_confusoes.csv`): os erros
+  sistemáticos são **entre aves e entre parecidos**: bird → chicken (14 de 22), american_crow → wild_turkey (14 de 63)
+  e → chicken (10), chicken → dog (19 de 60), grey_fox → red_fox (8 de 39), e domestic_cat espalhado em woodchuck
+  e northern_raccoon (7 cada de 48).
+- **Noite × dia** (heurística de cor, `noite_vs_dia_test_public.csv`): com o CLIP-L a noite quase não pesa. A acurácia
+  do professor melhorado é 0,662 à noite e 0,686 de dia (com o SigLIP eram 0,514 e 0,679). No zero-shot a noite chega a
+  ser melhor (0,535 × 0,452).
+- **Animais pequenos:** continuam sem medição (não há bounding box), como em 6b.13.
+- **Onde o aluno supera o professor** (média de 3 seeds, `results/trilha_c/clip-l/aluno_vs_professor_b5.csv`), em
+  todas as 3 seeds: american_crow (+0,21), grey_fox (+0,20), chicken (+0,12), virginia_opossum, coyote e
+  american_black_bear. **Onde perde:** eastern_cottontail (−0,35), eastern_fox_squirrel (−0,18), bird, woodchuck,
+  striped_skunk e domestic_cat (−0,10 a −0,13).
+- **Por quê (hipótese, coerente com 6b.12):** o aluno ganha nas classes em que o erro do professor é uma confusão
+  entre vizinhos parecidos (corvo/peru/galinha, raposa cinza/vermelha). Os 105 rótulos verdadeiros, repetidos 5×
+  por época, e a média sobre ~6.400 pseudo-rótulos puxam a fronteira para o lugar certo. Ele perde onde a classe é
+  pequena ou instável. eastern_cottontail varia de 0,15 a 0,69 entre seeds (na s0, 17 dos 26 coelhos viram
+  domestic_cat), e bird tem 22 imagens. Também perde onde o próprio professor já é ruim de forma sistemática
+  (domestic_cat): o aluno copia o ruído estruturado.
+- **No geral o aluno não supera o professor** (0,625 × 0,641), mas o entregável tem que ser o aluno: o professor
+  (CLIP-L, ~428M parâmetros) não pode fazer parte do modelo entregue.
+
 ---
 
 ## 7. Em aberto

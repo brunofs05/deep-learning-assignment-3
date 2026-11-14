@@ -149,7 +149,8 @@ def main():
         sh([str(S / "evaluate.py"), "--run", str(RUNS_DIR / name), "--workers", str(args.workers)])
     sh([str(S / "collect_results.py")])
     sh([str(S / "plot_parte2.py")])
-    sh([str(S / "compare_student_teacher.py"), "--teacher", teacher, "--run", str(RUNS_DIR / f"{method}_b5_s0")])
+    sh([str(S / "compare_student_teacher.py"), "--teacher", teacher, "--run",
+        *[str(RUNS_DIR / f"{method}_b5_s{s}") for s in (0, 1, 2)]])
     sh([str(S / "analisar_ruido.py"), "--teacher", teacher, "--run", str(RUNS_DIR / f"{method}_b5_s0")])
 
     gpu.stop_ev.set()

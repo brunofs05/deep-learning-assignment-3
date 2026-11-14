@@ -36,7 +36,10 @@ def main():
     model.eval()
     print(f"modelo: {ckpt['model']} | parâmetros: {count_params(model):,}")
 
-    paths = sorted(q for q in args.imagens.iterdir() if q.suffix.lower() in EXTS)
+    # busca recursiva: funciona com a pasta plana ou com subpastas
+    paths = sorted(q for q in args.imagens.rglob("*") if q.is_file() and q.suffix.lower() in EXTS)
+    if not paths:
+        sys.exit(f"nenhuma imagem {sorted(EXTS)} em {args.imagens}")
     dl = DataLoader(ImageDataset([str(q) for q in paths], None, eval_transform(ckpt["img_size"])),
                     batch_size=64, num_workers=args.workers)
     preds = []

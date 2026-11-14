@@ -60,6 +60,18 @@ mkdir -p weights && gh release download v1.0 -p model.pt -D weights   # ou baixe
 sha256sum weights/model.pt   # 12c61be18e53752f2064… (o mesmo de runs/aluno_clip-l_b5_s1/best.pt)
 ```
 
+## Entregáveis (seção 4 do enunciado)
+
+| Entregável | Onde |
+|---|---|
+| `README.md` (ambiente, um comando que treina, um que avalia) | este arquivo |
+| `predict.py` | [`predict.py`](predict.py): `python predict.py --imagens PASTA --saida preds.csv` (CPU, sem internet, imprime os parâmetros) |
+| Pesos do modelo entregue | release [v1.0](https://github.com/brunofs05/deep-learning-assignment-3/releases/tag/v1.0) → `weights/model.pt` |
+| `curva_orcamento.csv` | [`results/curva_orcamento.csv`](results/curva_orcamento.csv) (`metodo, orcamento, seed, f1_macro, acuracia`) |
+| `AI_LOG.md` | [`AI_LOG.md`](AI_LOG.md) |
+| Resultados por parte | `results/parte0/`, `results/teacher/` + `results/trilha_c/` (Parte 1), `results/parte2/`, `results/parte3/` (cada um com README) |
+| Decisões e justificativas | [`docs/DECISOES.md`](docs/DECISOES.md) |
+
 ## Reproduzir resultados
 
 | O quê | Comando | Saída |

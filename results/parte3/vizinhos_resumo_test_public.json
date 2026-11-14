@@ -7,5 +7,11 @@
   "acc_quando_vizinha_tem_rotulo_errado":0.2391304348,
   "frac_vizinha_rotulo_certo":0.6029593095,
   "erros_que_seguem_a_vizinha":0.3911564626,
+  "conf_media_acertos":0.5775828164,
+  "conf_media_erros":0.2834451506,
+  "auroc_conf_acerto":0.8450571718,
+  "sim_vizinha_media_acertos":0.9524800777,
+  "sim_vizinha_media_erros":0.9286499023,
+  "auroc_sim_vizinha_acerto":0.7146409821,
   "nota":"vizinha = imagem do train mais parecida nas features do modelo entregue; rótulo = o de treino (verdadeiro do orçamento ou pseudo-rótulo do professor). Só diagnóstico."
 }

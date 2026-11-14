@@ -71,3 +71,7 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
   **revisamos e assumimos** a leitura antes de apresentar.
 - Também corrigido: o "um comando que treina" do README treinava o piso, não o modelo entregue. Agora é o comando do
   aluno (testado em smoke test), e o "avaliar" aponta para a run do modelo entregue.
+- Auditoria final contra o enunciado (IA): `predict.py` testado **sem rede** (namespace sem internet) e com subpastas
+  (agora busca recursiva); F1 no val recalculado pela saída do `predict.py` = 0,603, o número que justificou a seed 1.
+  A resposta da capivara foi atualizada para o modelo entregue (DECISOES 6d.4): sem o professor, sobram confiança
+  (AUROC 0,845) e distância ao train (0,715). O README ganhou um mapa dos entregáveis.

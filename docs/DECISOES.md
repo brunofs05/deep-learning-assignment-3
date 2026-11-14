@@ -423,6 +423,8 @@ e `eastern_cottontail` −0,17), e filtrar por confiança não resolveu (6b.11).
   alta e passa pelo filtro, enquanto o filtro descarta acertos em classes difíceis.
 
 ### 6b.14 Pergunta para a apresentação: out-of-distribution (a capivara) — 2026-11-11
+> Números atualizados para o modelo entregue em **6d.4**.
+
 **Pergunta:** numa câmera no Uruguai, a primeira capivara seria classificada como uma das 21 classes. O que no método
 daria um sinal de que a imagem não pertence a nenhuma delas? **Não implementado** (o enunciado manda só responder).
 
@@ -571,6 +573,18 @@ entregue) e o rótulo com que entraram no treino.
 verdadeiro de chicken). No test_public inteiro, 87,5% das imagens têm vizinha com cos ≥ 0,9, e a acurácia é 0,90 quando
 a vizinha tem o rótulo certo × 0,24 quando tem o errado. Leitura: boa parte do desempenho vem de reconhecer a
 câmera/cena, e o ruído do professor entra por cenas inteiras pseudo-rotuladas errado. É correlação, não prova causal.
+
+### 6d.4 Pergunta da capivara atualizada para o modelo entregue
+A resposta de 6b.14 usava o aluno SigLIP, e os sinais 3–5 dependem do professor, que **não vai no modelo entregue**.
+No modelo entregue (aluno CLIP-L s1, test_public, `results/parte3/vizinhos_resumo_test_public.json`):
+- **Confiança máxima:** 0,58 nos acertos × 0,28 nos erros, **AUROC 0,845** para separar acerto de erro. Continua um
+  substituto: mede erro dentro das 21 classes, não uma capivara de verdade.
+- **Similaridade com a imagem de treino mais próxima** (features do próprio modelo, com um banco de features do train
+  guardado junto): 0,95 nos acertos × 0,93 nos erros, AUROC 0,715. É um sinal mais fraco que a confiança.
+- **Leitura que a Parte 3 acrescenta:** o modelo se apoia muito em reconhecer a cena (6d.3). Numa câmera nova no
+  Uruguai, **todas** as imagens teriam cena desconhecida, então a distância ao train subiria para a câmera inteira, e
+  não só para a capivara. Ela detecta mudança de domínio, não classe nova. O sinal por imagem seria a confiança baixa,
+  mas a capivara tende a cair com confiança nas classes-lixeira de roedores (woodchuck, esquilos).
 
 ---
 

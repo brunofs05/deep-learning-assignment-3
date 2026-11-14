@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
+from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
 
 from pa3.data import ImageDataset, budget_split, eval_transform, load_split
@@ -77,7 +78,8 @@ def main():
 
     # ---- o test_public inteiro: quanto a previsão segue o rótulo de treino da vizinha mais próxima? ----
     tp = test.reset_index()
-    pred = pd.read_csv(out / "metricas_cam_test_public.csv").set_index("image_id").loc[tp["image_id"], "pred"].to_numpy()
+    met = pd.read_csv(out / "metricas_cam_test_public.csv").set_index("image_id").loc[tp["image_id"]]
+    pred, conf = met["pred"].to_numpy(), met["conf"].to_numpy()
     s_all = features(model, tp, tf, device, args.workers) @ ft.T
     nn1 = s_all.argmax(1)
     viz = train["rotulo_treino"].to_numpy()[nn1]
@@ -93,6 +95,12 @@ def main():
         "acc_quando_vizinha_tem_rotulo_errado": float(acerto[~viz_ok].mean()),
         "frac_vizinha_rotulo_certo": float(viz_ok.mean()),
         "erros_que_seguem_a_vizinha": float(segue[~acerto].mean()),
+        # sinais de "não confie" disponíveis no modelo entregue (substitutos de OOD; ver DECISOES 6b.14/6d.4)
+        "conf_media_acertos": float(conf[acerto].mean()), "conf_media_erros": float(conf[~acerto].mean()),
+        "auroc_conf_acerto": float(roc_auc_score(acerto, conf)),
+        "sim_vizinha_media_acertos": float(s_all.max(1)[acerto].mean()),
+        "sim_vizinha_media_erros": float(s_all.max(1)[~acerto].mean()),
+        "auroc_sim_vizinha_acerto": float(roc_auc_score(acerto, s_all.max(1))),
         "nota": "vizinha = imagem do train mais parecida nas features do modelo entregue; rótulo = o de treino "
                 "(verdadeiro do orçamento ou pseudo-rótulo do professor). Só diagnóstico.",
     }

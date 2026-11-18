@@ -69,7 +69,7 @@ sha256sum weights/model.pt   # 12c61be18e53752f2064… (o mesmo de runs/aluno_cl
 | Pesos do modelo entregue | release [v1.0](https://github.com/brunofs05/deep-learning-assignment-3/releases/tag/v1.0) → `weights/model.pt` |
 | `curva_orcamento.csv` | [`results/curva_orcamento.csv`](results/curva_orcamento.csv) (`metodo, orcamento, seed, f1_macro, acuracia`) |
 | `AI_LOG.md` | [`AI_LOG.md`](AI_LOG.md) |
-| Resultados por parte | `results/parte0/`, `results/teacher/` + `results/trilha_c/` (Parte 1), `results/parte2/`, `results/parte3/` (cada um com README) |
+| Resultados por parte | `results/parte0/`, `results/teacher/` + `results/trilha_c/` (Parte 1; análises e pergunta da capivara em [`results/trilha_c/README.md`](results/trilha_c/README.md)), `results/parte2/`, `results/parte3/` (cada um com README) |
 
 ## Reproduzir resultados
 

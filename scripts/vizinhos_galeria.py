@@ -95,7 +95,7 @@ def main():
         "acc_quando_vizinha_tem_rotulo_errado": float(acerto[~viz_ok].mean()),
         "frac_vizinha_rotulo_certo": float(viz_ok.mean()),
         "erros_que_seguem_a_vizinha": float(segue[~acerto].mean()),
-        # sinais de "não confie" disponíveis no modelo entregue (substitutos de OOD; ver DECISOES 6b.14/6d.4)
+        # sinais de "não confie" disponíveis no modelo entregue (substitutos de OOD)
         "conf_media_acertos": float(conf[acerto].mean()), "conf_media_erros": float(conf[~acerto].mean()),
         "auroc_conf_acerto": float(roc_auc_score(acerto, conf)),
         "sim_vizinha_media_acertos": float(s_all.max(1)[acerto].mean()),

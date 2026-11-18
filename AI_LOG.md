@@ -29,7 +29,7 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
 - Incidente: a IA sobrescreveu o `.gitignore` original sem olhar antes; percebemos no `git status` e restauramos.
 
 ### 2026-11-13 — Revisão da Parte 1 (branch da Elisa) e Parte 2 na GTX 1080 Ti
-- Pedimos à IA (Claude Code) uma revisão cuidadosa da Parte 1 contra o enunciado. Resultado em `docs/REVISAO_PARTE1.md`:
+- Pedimos à IA (Claude Code) uma revisão cuidadosa da Parte 1 contra o enunciado. Resultado:
   requisitos atendidos; problemas de coerência/rigor apontados e corrigidos (FP16 forçado na Pascal no `teacher.py`,
   aluno em 224 px × piso em 384 px, professor escolhido olhando o test_public, "cobertura" por classe calculada errado).
 - A IA perguntou antes de decidir: escolhemos (1) comparar SigLIP e CLIP-L e escolher por **CV nos 105 rótulos**
@@ -45,12 +45,12 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
   (os checkpoints dos alunos CLIP-L estavam só na máquina da GPU, fora do git) e que a Parte 3 não estava feita.
 - A IA percebeu que a máquina de trabalho não tinha GPU NVIDIA (`torch.cuda.is_available()` = False) e não tentou treinar
   em CPU; em vez disso, escrevemos `scripts/galeria.py` agora e deixamos o treino do aluno para uma máquina com GPU
-  (passos em `docs/fazer_placa_de_video.md`).
+ .
 - `scripts/galeria.py`: Grad-CAM implementado à mão (hooks na `layer4`, sem depender do pacote `grad-cam`). Regra de seleção
   fixada antes de ver os resultados: erros = os de maior confiança (um por classe); acertos = sorteio com semente fixa
   (um por classe), para não escolher só os acertos bonitos. Testado com um checkpoint SigLIP antigo em 150 imagens
   (o CAM caía em cerca e vegetação, não no animal); esse teste não vale como resultado.
-- Registramos em `docs/DECISOES.md` que o modelo entregue é a seed 1 (melhor val) mesmo com o pior test_public (0,583),
+- Registramos nas notas internas do trabalho que o modelo entregue é a seed 1 (melhor val) mesmo com o pior test_public (0,583),
   pois escolher pelo test_public seria sobreajuste.
 - Os diagnósticos dos erros e a leitura dos acertos serão escritos por nós depois de ver as imagens do modelo final;
   a IA só gera as figuras e as métricas de apoio.
@@ -73,5 +73,5 @@ Pedimos uma revisão crítica da Parte 0 contra o enunciado. Problemas apontados
   aluno (testado em smoke test), e o "avaliar" aponta para a run do modelo entregue.
 - Auditoria final contra o enunciado (IA): `predict.py` testado **sem rede** (namespace sem internet) e com subpastas
   (agora busca recursiva); F1 no val recalculado pela saída do `predict.py` = 0,603, o número que justificou a seed 1.
-  A resposta da capivara foi atualizada para o modelo entregue (DECISOES 6d.4): sem o professor, sobram confiança
+  A resposta da capivara foi atualizada para o modelo entregue (notas internas): sem o professor, sobram confiança
   (AUROC 0,845) e distância ao train (0,715). O README ganhou um mapa dos entregáveis.

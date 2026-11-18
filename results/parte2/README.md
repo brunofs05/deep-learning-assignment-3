@@ -1,6 +1,6 @@
 # Parte 2 — Curva de orçamento (Trilha C, professor CLIP-L)
 
-Reproduzir: `uv run python scripts/run_parte2.py` (~1h10 numa GTX 1080 Ti; retomável). Decisões: `docs/DECISOES.md` 6c.
+Reproduzir: `uv run python scripts/run_parte2.py` (~1h10 numa GTX 1080 Ti; retomável).
 
 ## Gráfico obrigatório — `curva_orcamento.png`
 F1 macro no test_public × rótulos por classe (eixo log), com piso, aluno, professor (melhorado e zero-shot) e teto.

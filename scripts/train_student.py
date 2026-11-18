@@ -1,6 +1,6 @@
 """Trilha C — treina o aluno (ResNet-18) com pseudo-rótulos do professor + os rótulos verdadeiros do orçamento.
 
-Pseudo-rótulos vêm de scripts/teacher_improve.py. Tratamento do ruído (ver docs/DECISOES.md):
+Pseudo-rótulos vêm de scripts/teacher_improve.py. Tratamento do ruído:
   * filtro por confiança: só entram as imagens sem rótulo com max-prob do professor >= tau;
   * rótulos suaves com temperatura: alvo = softmax(log p / temp) (temp > 1 suaviza);
   * peso das pseudo-amostras na perda (--pseudo-weight) e rótulos verdadeiros repetidos (--labeled-repeat).

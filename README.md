@@ -2,7 +2,7 @@
 
 Classificação de 21 espécies (ENA24) com 5 rótulos por classe + ~6,5k imagens sem rótulo.
 Backbone: **ResNet-18 (ImageNet)**. Parte 1: **Trilha C (professor → aluno)**.
-Enunciado: [`docs/PA3.md`](docs/PA3.md). Decisões e justificativas: [`docs/DECISOES.md`](docs/DECISOES.md).
+Enunciado: [`docs/PA3.md`](docs/PA3.md).
 
 ## Ambiente
 
@@ -31,7 +31,7 @@ Treina o **aluno** ResNet-18 (Trilha C) com os 105 rótulos de `rotulos_5.csv` +
 CLIP-L melhorado, que já estão versionados em `results/teacher/clip-l/improved_b5/` (para refazê-los do zero, ver
 "Reproduzir resultados"). Salva em `runs/aluno_clip-l_b5_s1/`: `config.json`, `history.csv` e `best.pt` (melhor época
 pelo **F1 macro no val**; o `test_public` nunca é lido no treino). ~12 min na GTX 1080 Ti.
-O modelo entregue é esse `best.pt` copiado para `weights/model.pt` (seed 1 = melhor val; ver `docs/DECISOES.md` §7).
+O modelo entregue é esse `best.pt` copiado para `weights/model.pt` (seed 1 = melhor val — a seed é escolhida pelo val, nunca pelo test_public).
 
 O piso (Parte 0) treina com `uv run python scripts/train.py --model resnet18 --budget 5 --seed 0`.
 
@@ -70,7 +70,6 @@ sha256sum weights/model.pt   # 12c61be18e53752f2064… (o mesmo de runs/aluno_cl
 | `curva_orcamento.csv` | [`results/curva_orcamento.csv`](results/curva_orcamento.csv) (`metodo, orcamento, seed, f1_macro, acuracia`) |
 | `AI_LOG.md` | [`AI_LOG.md`](AI_LOG.md) |
 | Resultados por parte | `results/parte0/`, `results/teacher/` + `results/trilha_c/` (Parte 1), `results/parte2/`, `results/parte3/` (cada um com README) |
-| Decisões e justificativas | [`docs/DECISOES.md`](docs/DECISOES.md) |
 
 ## Reproduzir resultados
 

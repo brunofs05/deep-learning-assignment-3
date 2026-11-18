@@ -225,3 +225,9 @@ runs/
 weights/
 *.pt
 *.pth
+
+# docs internos (não vão para o repositório online)
+docs/DECISOES.md
+docs/fazer_placa_de_video.md
+docs/importante.md
+docs/REVISAO_PARTE1.md
